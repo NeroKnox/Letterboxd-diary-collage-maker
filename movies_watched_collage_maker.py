@@ -11,7 +11,8 @@ import urllib.request
 if(__name__ == "__main__"):
     service = Service(r"C:\\Program Files\\Google\\Chrome\\Application\\chromedriver-win64\\chromedriver.exe")
     options = webdriver.ChromeOptions()
-    driver = webdriver.Chrome(service=service, options=options) 
+    driver = webdriver.Chrome(service=service, options=options)
+    driver.set_page_load_timeout(30)
     opener = urllib.request.build_opener()
     opener.addheaders = [('User-Agent', 'MyApp/1.0')]
     urllib.request.install_opener(opener)
@@ -21,7 +22,7 @@ if(__name__ == "__main__"):
     year = input("Enter Year: ")
     month = input("Enter Month as a number (01-12): ")
 
-    x = 0
+    is_film = 1
     film_number = 1
     film_names = []
     film_ids = []
@@ -33,7 +34,7 @@ if(__name__ == "__main__"):
     time.sleep(1)
     
     #For a Month, get the Names, IDs and Links of all Films in the Month
-    while x == 0:
+    while is_film == 1:
         try:
             film_name = driver.find_element(By.XPATH,f'/html/body/div[1]/div/section[2]/table/tbody/tr[{film_number}]/td[3]/div').get_attribute("data-film-name")
             film_names.append(film_name)
@@ -43,10 +44,15 @@ if(__name__ == "__main__"):
             film_links.append(film_link)
             film_number += 1
         except:
-            x = 1
+            is_film = 0
             film_number -= 1
             break
     
+    #Reverse the arrays, so they are ordered by Earliest Watch First
+    film_names.reverse()
+    film_ids.reverse()
+    film_links.reverse()
+
     #Create Background Image
     margin = 10
     if film_number <= 3:
@@ -65,7 +71,7 @@ if(__name__ == "__main__"):
     collage = Image.new(mode='RGB',size=((largura*(1200+margin))+margin,(altura*(675+margin))+margin),color=(0,0,0))
     x_coord = margin
     y_coord = margin
-    row_counter = 0
+    movie_counter = 0
     #Get Images
     for link in film_links:
         driver.get('https://letterboxd.com/'+ link)
@@ -83,13 +89,14 @@ if(__name__ == "__main__"):
         image = Image.open('C:\\Users\\matte\\Desktop\\pirateboxd\\film.png')
         #Add image to final collage
         collage.paste(image,(x_coord,y_coord))
+        #Add text
+
         #Move pointer
-        row_counter +=1
+        movie_counter +=1
         x_coord += 1200 + margin
-        if(row_counter == largura):
+        if(movie_counter % largura == 0):
             x_coord = margin
             y_coord += 675 + margin
-            row_counter = 0
     
     #Save final collage
     collage.save('C:\\Users\\matte\\Desktop\\pirateboxd\\Movies_'+str(year)+'_'+str(month)+'.jpg')
