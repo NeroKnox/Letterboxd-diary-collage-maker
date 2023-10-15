@@ -1,14 +1,10 @@
 import time
-import math
-import requests
 from PIL import Image
-from io import BytesIO
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.common.action_chains import ActionChains
 import re
 import urllib.request
 
@@ -21,15 +17,10 @@ if(__name__ == "__main__"):
     urllib.request.install_opener(opener)
     
     #Variables
-    '''
     username = input("Enter Letterboxd Username: ")
     year = input("Enter Year: ")
     month = input("Enter Month as a number (01-12): ")
-    '''
 
-    username = 'neroknox'
-    year = '2023'
-    month = '09'
     x = 0
     film_number = 1
     film_names = []
@@ -88,10 +79,6 @@ if(__name__ == "__main__"):
         image_link = re.split('[()]',my_property)[1]
         image_link = image_link.replace('"','')
         print(image_link)
-        #image_link=WebDriverWait(driver,10).until(EC.presence_of_element_located((By.XPATH,"/html/body/div[1]/div/div[2]"))).get_attribute('srcset')
-        #response = requests.get(image_link)
-        #img = Image.open(BytesIO(response.content))
-        #urlretrieve(image_link,'film.png')
         urllib.request.urlretrieve(image_link,"C:\\Users\\matte\\Desktop\\pirateboxd\\film.png")
         image = Image.open('C:\\Users\\matte\\Desktop\\pirateboxd\\film.png')
         #Add image to final collage
