@@ -14,7 +14,7 @@ if(__name__ == "__main__"):
     year = input("Enter Year: ")
     month = input("Enter Month as a number (01-12): ")
     
-    service = Service(r"C:\\Program Files\\Google\\Chrome\\Application\\chromedriver-win64\\chromedriver.exe")
+    service = Service(r"path\\to\\chromedriver.exe")
     options = webdriver.ChromeOptions()
     options.add_argument('headless')
     driver = webdriver.Chrome(service=service, options=options)
@@ -139,4 +139,4 @@ if(__name__ == "__main__"):
             y_coord += 675 + margin
     
     #Save final collage
-    collage.save('C:\\Users\\matte\\Desktop\\pirateboxd\\Movies_'+str(year)+'_'+str(month)+'.jpg')
+    collage.save(str(year)+'_'+str(month)+'.jpg')
