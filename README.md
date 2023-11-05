@@ -9,4 +9,5 @@ Example of image generated (username='neroknox',year='2023',month='09'):
 ![Movies_2023_09](https://github.com/NeroKnox/Letterboxd-diary-collage-maker/assets/88953659/76248596-8eb3-4081-b5af-4b7c2e0254ba)
 
 Required libraries: 'selenium' and 'PIL'.
-You also need to install the WebDriver for Google Chrome. Depending on your Chrome version, the correct driver may be found ![here](https://chromedriver.chromium.org/downloads) or ![here](https://googlechromelabs.github.io/chrome-for-testing/). After downloading it, you need add the path to the driver file in the code before running it.
+
+You also need to install the WebDriver for Google Chrome. Depending on your Chrome version, the correct driver may be found [here](https://chromedriver.chromium.org/downloads) or [here](https://googlechromelabs.github.io/chrome-for-testing/). After downloading it, you need add the path to the driver file in the code before running it.
