@@ -14,9 +14,11 @@ if(__name__ == "__main__"):
     year = input("Enter Year: ")
     month = input("Enter Month as a number (01-12): ")
     
-    service = Service(r"C:\\Program Files\\Google\\Chrome\\Application\\chromedriver-win64\\chromedriver.exe")
+    service = Service(r"C:\\Tools\\chrome-win64\\chromedriver-win64\\chromedriver.exe")
     options = webdriver.ChromeOptions()
-    options.add_argument('headless')
+    #options.binary_location = "C:\\Tools\\chrome-win64\\chrome.exe"
+    #options.add_argument('headless')
+    #options.add_extension('C:\\Users\\matte\\Desktop\\pirateboxd\\AdBlock.crx')
     driver = webdriver.Chrome(service=service, options=options)
     driver.set_page_load_timeout(600)
     opener = urllib.request.build_opener()
@@ -32,7 +34,7 @@ if(__name__ == "__main__"):
     
     # Opening Diary
     driver.get('https://letterboxd.com/'+username+'/films/diary/for/'+year+'/'+month+'/')
-    time.sleep(1)
+    time.sleep(5)
     
     #For a Month, get the Names, IDs and Links of all Films in the Month
     while is_film:
@@ -80,7 +82,10 @@ if(__name__ == "__main__"):
             driver.find_element(By.CLASS_NAME, "fc-button-label").click()
         except:
             pass
-        
+
+        time.sleep(5)
+        driver.switch_to.default_content()
+
         try:
             #Checks if the film is foreign and if so, gets its original title
             film_original = driver.find_element(By.XPATH,'/html/body/div[2]/div/div/div[2]/section[1]/p/em').text
@@ -89,11 +94,15 @@ if(__name__ == "__main__"):
             is_foreign = False
         
         #Get film info
-        film_year = driver.find_element(By.XPATH,'/html/body/div[2]/div/div/div[2]/section[1]/p/small/a').text
-        director = driver.find_element(By.XPATH,'/html/body/div[2]/div/div/div[2]/section[1]/p/a/span').text
+        #film_year = driver.find_element(By.XPATH,'/html/body/div[2]/div/div/div[2]/section[1]/p/small/a').text
+        film_year = driver.find_element(By.XPATH,'/html/body/div[3]/div/div/div[2]/section[1]/div/div/div/a').text
+        #director = driver.find_element(By.XPATH,'/html/body/div[2]/div/div/div[2]/section[1]/p/a/span').text
+        director = driver.find_element(By.XPATH,'/html/body/div[3]/div/div/div[2]/section[1]/div/div/p/span[2]/a/span').text
+        
         
         #Get image
-        my_property = WebDriverWait(driver, 20).until(EC.visibility_of_element_located((By.XPATH, "/html/body/div[1]/div/div[2]"))).value_of_css_property("background-image")
+        #my_property = WebDriverWait(driver, 20).until(EC.visibility_of_element_located((By.XPATH, "/html/body/div[1]/div/div[2]"))).value_of_css_property("background-image")
+        my_property = WebDriverWait(driver, 20).until(EC.visibility_of_element_located((By.XPATH, "/html/body/div[2]/div/div[1]"))).value_of_css_property("background-image")
         image_link = re.split('[()]',my_property)[1]
         image_link = image_link.replace('"','')
         urllib.request.urlretrieve(image_link,"C:\\Users\\matte\\Desktop\\pirateboxd\\film.png")
