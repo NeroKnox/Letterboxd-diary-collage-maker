@@ -7,6 +7,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.service import Service
 import re
 import urllib.request
+from guess_language import guess_language
 
 if(__name__ == "__main__"):
     #Variables
@@ -34,7 +35,10 @@ if(__name__ == "__main__"):
     
     # Opening Diary
     driver.get('https://letterboxd.com/'+username+'/films/diary/for/'+year+'/'+month+'/')
-    time.sleep(5)
+    time.sleep(0.25)
+    driver.execute_script("window.scrollTo(0, document.body.scrollHeight);") #scroll to bottom to load all films
+    time.sleep(0.25)
+    
     
     #For a Month, get the Names, IDs and Links of all Films in the Month
     while is_film:
@@ -72,7 +76,7 @@ if(__name__ == "__main__"):
     y_coord = margin
     movie_counter = 0
     #Get Images
-    driver.implicitly_wait(5)
+    driver.implicitly_wait(2)
     for link in film_links:
         driver.get('https://letterboxd.com/'+ link)
         is_foreign = True
@@ -83,26 +87,24 @@ if(__name__ == "__main__"):
         except:
             pass
 
-        time.sleep(5)
         driver.switch_to.default_content()
 
         try:
             #Checks if the film is foreign and if so, gets its original title
-            film_original = driver.find_element(By.XPATH,'/html/body/div[2]/div/div/div[2]/section[1]/p/em').text
+            #film_original = driver.find_element(By.XPATH,'/html/body/div[2]/div/div/div[2]/section[1]/p/em').text
+            film_original = driver.find_element(By.XPATH,'/html/body/div[3]/div/div/div[2]/section[1]/div/div/h2').text
             film_original = film_original.strip("'‘’")
+            language = guess_language(film_original) #original language of movie
         except:
             is_foreign = False
         
         #Get film info
-        #film_year = driver.find_element(By.XPATH,'/html/body/div[2]/div/div/div[2]/section[1]/p/small/a').text
         film_year = driver.find_element(By.XPATH,'/html/body/div[3]/div/div/div[2]/section[1]/div/div/div/a').text
-        #director = driver.find_element(By.XPATH,'/html/body/div[2]/div/div/div[2]/section[1]/p/a/span').text
         director = driver.find_element(By.XPATH,'/html/body/div[3]/div/div/div[2]/section[1]/div/div/p/span[2]/a/span').text
         
         
         #Get image
-        #my_property = WebDriverWait(driver, 20).until(EC.visibility_of_element_located((By.XPATH, "/html/body/div[1]/div/div[2]"))).value_of_css_property("background-image")
-        my_property = WebDriverWait(driver, 20).until(EC.visibility_of_element_located((By.XPATH, "/html/body/div[2]/div/div[1]"))).value_of_css_property("background-image")
+        my_property = WebDriverWait(driver, 15).until(EC.visibility_of_element_located((By.XPATH, "/html/body/div[2]/div/div[1]"))).value_of_css_property("background-image")
         image_link = re.split('[()]',my_property)[1]
         image_link = image_link.replace('"','')
         urllib.request.urlretrieve(image_link,"C:\\Users\\matte\\Desktop\\pirateboxd\\film.png")
@@ -114,10 +116,20 @@ if(__name__ == "__main__"):
         title_font = ImageFont.truetype('GOTHIC.TTF', 36)
         subtitle_font = ImageFont.truetype('GOTHICI.TTF',24)
         overtitle_font = ImageFont.truetype('GOTHICBI.TTF',30)
+        kanji_font = ImageFont.truetype('YuGothR.ttc',36)
+        hangul_font = ImageFont.truetype('malgunsl.ttf',36)
+        thai_font = ImageFont.truetype('LeelUIsl.ttf',36)
         
         #Draw label background
         if is_foreign:
-            width = max(title_font.getsize(film_original + ' (' + film_year + ')')[0], subtitle_font.getsize('dir: ' + director)[0], overtitle_font.getsize(film_names[movie_counter])[0])
+            if language in ['ja','zh']:
+                width = max(kanji_font.getsize(film_original + ' (' + film_year + ')')[0], subtitle_font.getsize('dir: ' + director)[0], overtitle_font.getsize(film_names[movie_counter])[0])
+            elif language == 'ko':
+                width = max(hangul_font.getsize(film_original + ' (' + film_year + ')')[0], subtitle_font.getsize('dir: ' + director)[0], overtitle_font.getsize(film_names[movie_counter])[0])
+            elif language == 'th':
+                width = max(thai_font.getsize(film_original + ' (' + film_year + ')')[0], subtitle_font.getsize('dir: ' + director)[0], overtitle_font.getsize(film_names[movie_counter])[0])
+            else:
+                width = max(title_font.getsize(film_original + ' (' + film_year + ')')[0], subtitle_font.getsize('dir: ' + director)[0], overtitle_font.getsize(film_names[movie_counter])[0])
             plus = 545
         else:
             width = max(title_font.getsize(film_names[movie_counter] + ' (' + film_year + ')')[0], subtitle_font.getsize('dir: ' + director)[0])
@@ -134,7 +146,14 @@ if(__name__ == "__main__"):
         #Add text
         if is_foreign:
             label.text((x_coord+25,y_coord+550),film_names[movie_counter],(255,255,255), font=overtitle_font)
-            label.text((x_coord+25,y_coord+580),film_original + ' (' + film_year + ')',(255,255,255), font=title_font)
+            if language in ['ja','zh']:
+                label.text((x_coord+25,y_coord+590),film_original + ' (' + film_year + ')',(255,255,255), font=kanji_font)
+            elif language == 'ko':
+                label.text((x_coord+25,y_coord+580),film_original + ' (' + film_year + ')',(255,255,255), font=hangul_font)
+            elif language == 'th':
+                label.text((x_coord+25,y_coord+580),film_original + ' (' + film_year + ')',(255,255,255), font=thai_font)
+            else:
+                label.text((x_coord+25,y_coord+580),film_original + ' (' + film_year + ')',(255,255,255), font=title_font)
             label.text((x_coord+25,y_coord+625),'dir: ' + director,(255,255,255), font=subtitle_font)
         else:
             label.text((x_coord+25,y_coord+580),film_names[movie_counter] + ' (' + film_year + ')',(255,255,255), font=title_font)
@@ -144,8 +163,12 @@ if(__name__ == "__main__"):
         movie_counter +=1
         x_coord += 1200 + margin
         if(movie_counter % largura == 0):
-            x_coord = margin
+            if(movie_counter == largura * (altura-1)):
+                last_row_empty_space = largura - film_number + movie_counter
+                x_coord = margin + 600 * (last_row_empty_space)
+            else:
+                x_coord = margin
             y_coord += 675 + margin
     
     #Save final collage
-    collage.save('C:\\Users\\matte\\Desktop\\pirateboxd\\Movies_'+str(year)+'_'+str(month)+'.jpg')
+    collage.save('C:\\Users\\matte\\Desktop\\pirateboxd\\Movies_'+str(username)+'_'+str(year)+'_'+str(month)+'.jpg')
