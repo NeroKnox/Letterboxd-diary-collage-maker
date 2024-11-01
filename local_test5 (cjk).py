@@ -46,4 +46,3 @@ boot = 'Das Boot'
 welle = 'Die Welle'
 
 print(guess_language(welle))
-

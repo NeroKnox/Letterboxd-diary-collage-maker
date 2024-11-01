@@ -32,12 +32,15 @@ if(__name__ == "__main__"):
     film_ids = []
     film_links = []
     image_links = []
-    
+    film_ratings = []
+
     # Opening Diary
     driver.get('https://letterboxd.com/'+username+'/films/diary/for/'+year+'/'+month+'/')
-    time.sleep(0.25)
+    time.sleep(0.1)
+    driver.execute_script("window.scrollTo(0, document.body.scrollHeight/2);") #scroll to bottom to load all films
+    time.sleep(0.1)
     driver.execute_script("window.scrollTo(0, document.body.scrollHeight);") #scroll to bottom to load all films
-    time.sleep(0.25)
+    time.sleep(0.1)
     
     
     #For a Month, get the Names, IDs and Links of all Films in the Month
@@ -47,6 +50,8 @@ if(__name__ == "__main__"):
             film_names.append(film_name)
             film_link = driver.find_element(By.XPATH,f'/html/body/div[1]/div/section[2]/table/tbody/tr[{film_number}]/td[3]/div').get_attribute("data-film-link")
             film_links.append(film_link)
+            film_rating = driver.find_element(By.XPATH,f'/html/body/div[1]/div/section[2]/table/tbody/tr[{film_number}]/td[5]/div/span').text
+            film_ratings.append(film_rating)
             film_number += 1
         except:
             is_film = False
@@ -56,9 +61,11 @@ if(__name__ == "__main__"):
     #Reverse the arrays, so they are ordered by Earliest Watch First
     film_names.reverse()
     film_links.reverse()
+    film_ratings.reverse()
 
     #Create Background Image
     margin = 10
+    banner = 175
     if film_number <= 3:
         largura = 1
         altura = film_number
@@ -71,10 +78,34 @@ if(__name__ == "__main__"):
             else:
                 largura += 1
     #individual image size - height: 675 px width: 1200 px
-    collage = Image.new(mode='RGB',size=((largura*(1200+margin))+margin,(altura*(675+margin))+margin),color=(0,0,0))
+    largura_tot = (largura*(1200+margin))+margin
+    altura_tot = (altura*(675+margin))+margin+banner
+    collage = Image.new(mode='RGB',size=(largura_tot, altura_tot),color=(20,24,28))
+    
+    #Coordinates Pointers definition
     x_coord = margin
-    y_coord = margin
+    y_coord = margin+banner
     movie_counter = 0
+    
+    #Fonts
+    title_font = ImageFont.truetype('GOTHIC.TTF', 36)
+    subtitle_font = ImageFont.truetype('GOTHICI.TTF',24)
+    overtitle_font = ImageFont.truetype('GOTHICBI.TTF',30)
+    header_font = ImageFont.truetype('GOTHICB.TTF',80)
+    kanji_font = ImageFont.truetype('YuGothR.ttc',36)
+    hangul_font = ImageFont.truetype('malgunsl.ttf',36)
+    thai_font = ImageFont.truetype('LeelUIsl.ttf',36)
+    star_font = ImageFont.truetype('YuGothB.ttc',60)
+
+    #Banner
+    draw = ImageDraw.Draw(collage)
+    draw.rectangle([(0,0),(largura_tot,banner)], fill=(32,40,48))
+    logo = Image.open('C:\\Users\\matte\\Desktop\\pirateboxd\\logo.png')
+    logo = logo.resize((250,135))
+    collage.paste(logo,(largura_tot - 300,20))
+    months = ['January', 'February', 'March', 'April', 'May', 'June', 'July','August','September','October','November','December']
+    draw.text((40,42),username+"'s " + months[int(month)-1] + " of '" + year[2:],(255,255,255), font=header_font)
+
     #Get Images
     driver.implicitly_wait(2)
     for link in film_links:
@@ -91,36 +122,35 @@ if(__name__ == "__main__"):
 
         try:
             #Checks if the film is foreign and if so, gets its original title
-            #film_original = driver.find_element(By.XPATH,'/html/body/div[2]/div/div/div[2]/section[1]/p/em').text
             film_original = driver.find_element(By.XPATH,'/html/body/div[3]/div/div/div[2]/section[1]/div/div/h2').text
             film_original = film_original.strip("'‘’")
             language = guess_language(film_original) #original language of movie
         except:
-            is_foreign = False
+            try:
+                film_original = driver.find_element(By.XPATH,'/html/body/div[2]/div/div/div[2]/section[1]/div/div/h2').text
+                film_original = film_original.strip("'‘’")
+                language = guess_language(film_original)
+            except:
+                is_foreign = False
         
         #Get film info
-        film_year = driver.find_element(By.XPATH,'/html/body/div[3]/div/div/div[2]/section[1]/div/div/div/a').text
-        director = driver.find_element(By.XPATH,'/html/body/div[3]/div/div/div[2]/section[1]/div/div/p/span[2]/a/span').text
-        
+        try:
+            film_year = driver.find_element(By.XPATH,'/html/body/div[3]/div/div/div[2]/section[1]/div/div/div/a').text
+            director = driver.find_element(By.XPATH,'/html/body/div[3]/div/div/div[2]/section[1]/div/div/p/span[2]/a/span').text
+            image_source = WebDriverWait(driver, 15).until(EC.visibility_of_element_located((By.XPATH, "/html/body/div[2]/div/div[1]"))).value_of_css_property("background-image")
+        except:
+            film_year = driver.find_element(By.XPATH,'/html/body/div[2]/div/div/div[2]/section[1]/div/div/div/a').text
+            director = driver.find_element(By.XPATH,'/html/body/div[2]/div/div/div[2]/section[1]/div/div/p/span[2]/a/span').text
+            image_source = WebDriverWait(driver, 15).until(EC.visibility_of_element_located((By.XPATH, "/html/body/div[1]/div/div[1]"))).value_of_css_property("background-image")
         
         #Get image
-        my_property = WebDriverWait(driver, 15).until(EC.visibility_of_element_located((By.XPATH, "/html/body/div[2]/div/div[1]"))).value_of_css_property("background-image")
-        image_link = re.split('[()]',my_property)[1]
+        image_link = re.split('[()]',image_source)[1]
         image_link = image_link.replace('"','')
         urllib.request.urlretrieve(image_link,"C:\\Users\\matte\\Desktop\\pirateboxd\\film.png")
         image = Image.open('C:\\Users\\matte\\Desktop\\pirateboxd\\film.png')
         image = image.convert("RGBA")
         
-        #Film label
-        label = ImageDraw.Draw(collage)
-        title_font = ImageFont.truetype('GOTHIC.TTF', 36)
-        subtitle_font = ImageFont.truetype('GOTHICI.TTF',24)
-        overtitle_font = ImageFont.truetype('GOTHICBI.TTF',30)
-        kanji_font = ImageFont.truetype('YuGothR.ttc',36)
-        hangul_font = ImageFont.truetype('malgunsl.ttf',36)
-        thai_font = ImageFont.truetype('LeelUIsl.ttf',36)
-        
-        #Draw label background
+        #Draw film label background
         if is_foreign:
             if language in ['ja','zh']:
                 width = max(kanji_font.getsize(film_original + ' (' + film_year + ')')[0], subtitle_font.getsize('dir: ' + director)[0], overtitle_font.getsize(film_names[movie_counter])[0])
@@ -145,20 +175,23 @@ if(__name__ == "__main__"):
 
         #Add text
         if is_foreign:
-            label.text((x_coord+25,y_coord+550),film_names[movie_counter],(255,255,255), font=overtitle_font)
+            draw.text((x_coord+25,y_coord+550),film_names[movie_counter],(255,255,255), font=overtitle_font)
             if language in ['ja','zh']:
-                label.text((x_coord+25,y_coord+590),film_original + ' (' + film_year + ')',(255,255,255), font=kanji_font)
+                draw.text((x_coord+25,y_coord+590),film_original + ' (' + film_year + ')',(255,255,255), font=kanji_font)
             elif language == 'ko':
-                label.text((x_coord+25,y_coord+580),film_original + ' (' + film_year + ')',(255,255,255), font=hangul_font)
+                draw.text((x_coord+25,y_coord+580),film_original + ' (' + film_year + ')',(255,255,255), font=hangul_font)
             elif language == 'th':
-                label.text((x_coord+25,y_coord+580),film_original + ' (' + film_year + ')',(255,255,255), font=thai_font)
+                draw.text((x_coord+25,y_coord+580),film_original + ' (' + film_year + ')',(255,255,255), font=thai_font)
             else:
-                label.text((x_coord+25,y_coord+580),film_original + ' (' + film_year + ')',(255,255,255), font=title_font)
-            label.text((x_coord+25,y_coord+625),'dir: ' + director,(255,255,255), font=subtitle_font)
+                draw.text((x_coord+25,y_coord+580),film_original + ' (' + film_year + ')',(255,255,255), font=title_font)
+            draw.text((x_coord+25,y_coord+625),'dir: ' + director,(255,255,255), font=subtitle_font)
         else:
-            label.text((x_coord+25,y_coord+580),film_names[movie_counter] + ' (' + film_year + ')',(255,255,255), font=title_font)
-            label.text((x_coord+25,y_coord+625),'dir: ' + director,(255,255,255), font=subtitle_font)
-        
+            draw.text((x_coord+25,y_coord+580),film_names[movie_counter] + ' (' + film_year + ')',(255,255,255), font=title_font)
+            draw.text((x_coord+25,y_coord+625),'dir: ' + director,(255,255,255), font=subtitle_font)
+        #Add rating
+        #rating_size = star_font.getsize(film_ratings[movie_counter])[0]
+        draw.text((x_coord + 1175, y_coord+15), film_ratings[movie_counter], (0,192,48), font=star_font, anchor='rt')
+
         #Move pointer
         movie_counter +=1
         x_coord += 1200 + margin
