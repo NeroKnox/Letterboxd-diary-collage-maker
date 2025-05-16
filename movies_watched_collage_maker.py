@@ -9,12 +9,7 @@ import re
 import urllib.request
 from guess_language import guess_language
 
-if(__name__ == "__main__"):
-    #Variables
-    username = input("Enter Letterboxd Username: ")
-    year = input("Enter Year: ")
-    month = input("Enter Month as a number (01-12): ")
-    
+def generate_collage(username, year, month):
     service = Service(r"C:\\Tools\\chrome-win64\\chromedriver-win64\\chromedriver.exe")
     options = webdriver.ChromeOptions()
     #options.binary_location = "C:\\Tools\\chrome-win64\\chrome.exe"
@@ -111,6 +106,7 @@ if(__name__ == "__main__"):
     for link in film_links:
         driver.get('https://letterboxd.com/'+ link)
         is_foreign = True
+        no_backdrop = False
 
         try:
             #Click Consent Button (Stupid German Data Protection Laws)
@@ -127,11 +123,16 @@ if(__name__ == "__main__"):
             language = guess_language(film_original) #original language of movie
         except:
             try:
-                film_original = driver.find_element(By.XPATH,'/html/body/div[2]/div/div/div[2]/section[1]/div/div/h2').text
+                film_original = driver.find_element(By.XPATH,'/html/body/div[1]/div/div/div[2]/section[1]/div/div/h2').text
                 film_original = film_original.strip("'‘’")
                 language = guess_language(film_original)
             except:
-                is_foreign = False
+                try:
+                    film_original = driver.find_element(By.XPATH,'/html/body/div[2]/div/div/div[2]/section[1]/div/div/h2').text
+                    film_original = film_original.strip("'‘’")
+                    language = guess_language(film_original)
+                except:
+                    is_foreign = False
         
         #Get film info
         try:
@@ -139,17 +140,32 @@ if(__name__ == "__main__"):
             director = driver.find_element(By.XPATH,'/html/body/div[3]/div/div/div[2]/section[1]/div/div/p/span[2]/a/span').text
             image_source = WebDriverWait(driver, 15).until(EC.visibility_of_element_located((By.XPATH, "/html/body/div[2]/div/div[1]"))).value_of_css_property("background-image")
         except:
-            film_year = driver.find_element(By.XPATH,'/html/body/div[2]/div/div/div[2]/section[1]/div/div/div/a').text
-            director = driver.find_element(By.XPATH,'/html/body/div[2]/div/div/div[2]/section[1]/div/div/p/span[2]/a/span').text
-            image_source = WebDriverWait(driver, 15).until(EC.visibility_of_element_located((By.XPATH, "/html/body/div[1]/div/div[1]"))).value_of_css_property("background-image")
-        
+            try: #Films without backdrop --- Get poster instead (dimensions 1000x1500)
+                time.sleep(0.5)
+                film_year = WebDriverWait(driver, 15).until(EC.visibility_of_element_located((By.XPATH,'/html/body/div[1]/div/div/div[2]/section[1]/div/div/div/a'))).text
+                director = driver.find_element(By.XPATH,'/html/body/div[1]/div/div/div[2]/section[1]/div/div/p/span[2]/a/span').text
+                image_source = WebDriverWait(driver, 15).until(EC.visibility_of_element_located((By.XPATH, "/html/body/div[1]/div/div/div[1]/section[1]/a"))).get_attribute('href')
+                no_backdrop = True
+            except:
+                film_year = driver.find_element(By.XPATH,'/html/body/div[2]/div/div/div[2]/section[1]/div/div/div/a').text
+                director = driver.find_element(By.XPATH,'/html/body/div[2]/div/div/div[2]/section[1]/div/div/p/span[2]/a/span').text
+                image_source = WebDriverWait(driver, 15).until(EC.visibility_of_element_located((By.XPATH, "/html/body/div[1]/div/div[1]"))).value_of_css_property("background-image")
+
         #Get image
-        image_link = re.split('[()]',image_source)[1]
-        image_link = image_link.replace('"','')
+        if no_backdrop == False:
+            image_link = re.split('[()]',image_source)[1]
+            image_link = image_link.replace('"','')
+        else:
+            image_link = image_source
         urllib.request.urlretrieve(image_link,"C:\\Users\\matte\\Desktop\\pirateboxd\\film.png")
         image = Image.open('C:\\Users\\matte\\Desktop\\pirateboxd\\film.png')
         image = image.convert("RGBA")
-        
+        if no_backdrop:
+            image = image.resize((450,675))
+            background = Image.new('RGBA', (1200,675), (0,0,0,255))
+            background.paste(image,(375,0))
+            image = background
+
         #Draw film label background
         if is_foreign:
             if language in ['ja','zh']:
@@ -205,3 +221,12 @@ if(__name__ == "__main__"):
     
     #Save final collage
     collage.save('C:\\Users\\matte\\Desktop\\pirateboxd\\Movies_'+str(username)+'_'+str(year)+'_'+str(month)+'.jpg')
+
+
+if(__name__ == "__main__"):
+    #Variables
+    username = input("Enter Letterboxd Username: ")
+    year = input("Enter Year: ")
+    month = input("Enter Month as a number (01-12): ")
+    
+    generate_collage(username, year, month)
